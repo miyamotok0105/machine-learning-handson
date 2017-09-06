@@ -27,6 +27,12 @@ https://github.com/fchollet/deep-learning-with-python-notebooks
 https://papers.nips.cc/
 
 
+# git
+
+- awesome-self-driving-cars
+
+https://github.com/philbort/awesome-self-driving-cars
+
 # math
 
 - 最適化,線形計画法,内点法,数理計画法
