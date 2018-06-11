@@ -742,6 +742,8 @@ model.fit_generator(generator        = train_batch,
                     callbacks        = [checkpoint, tensorboard], 
                     max_queue_size   = 3)
 
+model.save_weights('./yolo_weights.100.hdf5')
+
 #============テスト============
 # print(os.path.join(os.path.dirname(os.path.abspath("__file__")), "RedBlodCellDetection", "JPEGImages", "BloodImage_00327.jpg"))
 # image_path = os.path.join(os.path.dirname(os.path.abspath("__file__")), "VOCdevkit", "VOC2012", "JPEGImages")
