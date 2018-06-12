@@ -480,6 +480,8 @@ x = BatchNormalization(name='norm_22')(x)
 x = LeakyReLU(alpha=0.1)(x)
 
 # Layer 23
+#S*S*(B*5+C) tensor
+#BOX:5個、CLASS：len(labels)
 x = Conv2D(BOX * (4 + 1 + CLASS), (1,1), strides=(1,1), padding='same', name='conv_23')(x)
 output = Reshape((GRID_H, GRID_W, BOX, 4 + 1 + CLASS))(x)
 
