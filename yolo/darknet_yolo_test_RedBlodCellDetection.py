@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 # tf.__version__
 
 #============設定ファイル============
