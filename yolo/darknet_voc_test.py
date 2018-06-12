@@ -611,6 +611,7 @@ output = Reshape((GRID_H, GRID_W, BOX, 4 + 1 + CLASS))(x)
 output = Lambda(lambda args: args[0])([output, true_boxes])
 
 model = Model([input_image, true_boxes], output)
+model.load_weights('weights_voc.ep88.h5')
 
 
 
