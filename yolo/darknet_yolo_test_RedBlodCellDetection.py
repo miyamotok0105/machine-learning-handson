@@ -190,7 +190,7 @@ class BoundBox:
             self.score = self.classes[self.get_label()]
             
         return self.score
-        
+
 
 class BatchGenerator(Sequence):
     def __init__(self, images, 
@@ -823,15 +823,17 @@ optimizer = SGD(lr=1e-4, decay=0.0005, momentum=0.9)
 
 model.compile(loss=custom_loss, optimizer=optimizer)
 
-model.fit_generator(generator        = train_batch, 
-                    steps_per_epoch  = len(train_batch), 
-                    epochs           = 100, 
-                    verbose          = 1,
-                    validation_data  = valid_batch,
-                    validation_steps = len(valid_batch),
-#                     callbacks        = [early_stop, checkpoint, tensorboard], 
-                    callbacks        = [checkpoint, tensorboard], 
-                    max_queue_size   = 3)
+# model.fit_generator(generator        = train_batch, 
+#                     steps_per_epoch  = len(train_batch), 
+#                     epochs           = 100, 
+#                     verbose          = 1,
+#                     validation_data  = valid_batch,
+#                     validation_steps = len(valid_batch),
+# #                     callbacks        = [early_stop, checkpoint, tensorboard], 
+#                     callbacks        = [checkpoint, tensorboard], 
+#                     max_queue_size   = 3)
+
+model.load_weights('weights_voc.ep79.h5')
 
 
 #テスト
