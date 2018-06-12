@@ -61,7 +61,7 @@ import cv2
 img = cv2.imread(all_imgs[0]["filename"])
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) #表示をbgrからrgbに変換する。
 print(img.shape)
-from matplotlib import pylab as plt
+# from matplotlib import pylab as plt
 # plt.imshow( img )
 
 class BoundBox:
@@ -284,7 +284,6 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from keras.optimizers import SGD, Adam, RMSprop
 from keras.layers.merge import concatenate
 from keras.utils import Sequence
-import matplotlib.pyplot as plt
 import keras.backend as K
 import tensorflow as tf
 import numpy as np
@@ -621,7 +620,7 @@ dummy_array = np.zeros((1,1,1,1,TRUE_BOX_BUFFER,4))
 image = cv2.imread(filepath)
 
 
-plt.figure(figsize=(10,10))
+# plt.figure(figsize=(10,10))
 # plt.imshow(image); plt.show()
 
 
