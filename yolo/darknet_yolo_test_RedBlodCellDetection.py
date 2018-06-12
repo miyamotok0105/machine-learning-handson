@@ -60,8 +60,6 @@ import matplotlib.pyplot as plt
 import keras.backend as K
 from keras.utils import Sequence
 import tensorflow as tf
-import imgaug as ia
-from imgaug import augmenters as iaa
 import numpy as np
 import pickle
 import copy
