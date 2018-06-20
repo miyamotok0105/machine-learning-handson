@@ -19,6 +19,13 @@ tar xf VOCtrainval_11-May-2012.tar
 # tar xf VOCtest_06-Nov-2007.tar
 ```
 
+
+```
+wget https://www.dropbox.com/s/75auoouvsnkl2w5/RedBlodCellDetection.zip
+unzip RedBlodCellDetection.zip
+```
+
+
 # 重み取得
 
 ```
