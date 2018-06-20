@@ -1,3 +1,4 @@
+
 import os
 image_path = os.path.join(os.path.dirname(os.path.abspath("__file__")), "VOCdevkit", "VOC2012", "JPEGImages")
 annot_path = os.path.join(os.path.dirname(os.path.abspath("__file__")), "VOCdevkit", "VOC2012", "Annotations")
@@ -64,6 +65,8 @@ print(img.shape)
 # from matplotlib import pylab as plt
 # plt.imshow( img )
 
+#============バウンディングボックス============
+
 class BoundBox:
     def __init__(self, x, y, w, h, c = None, classes = None):
         self.x     = x
@@ -88,147 +91,14 @@ class BoundBox:
             
         return self.score
 
+#============正規化============
+
 def normalize(image):
     image = image / 255.
     
     return image
 
-def _interval_overlap(interval_a, interval_b):
-    x1, x2 = interval_a
-    x3, x4 = interval_b
-
-    if x3 < x1:
-        if x4 < x1:
-            return 0
-        else:
-            return min(x2,x4) - x1
-    else:
-        if x2 < x3:
-             return 0
-        else:
-            return min(x2,x4) - x3  
-
-def decode_netout(netout, anchors, nb_class, obj_threshold=0.3, nms_threshold=0.3):
-    grid_h, grid_w, nb_box = netout.shape[:3]
-
-    boxes = []
-    
-    # decode the output by the network
-    netout[..., 4]  = _sigmoid(netout[..., 4])
-    netout[..., 5:] = netout[..., 4][..., np.newaxis] * _softmax(netout[..., 5:])
-    netout[..., 5:] *= netout[..., 5:] > obj_threshold
-    
-    for row in range(grid_h):
-        for col in range(grid_w):
-            for b in range(nb_box):
-                # from 4th element onwards are confidence and class classes
-                classes = netout[row,col,b,5:]
-                
-                if np.sum(classes) > 0:
-                    # first 4 elements are x, y, w, and h
-                    x, y, w, h = netout[row,col,b,:4]
-
-                    x = (col + _sigmoid(x)) / grid_w # center position, unit: image width
-                    y = (row + _sigmoid(y)) / grid_h # center position, unit: image height
-                    w = anchors[2 * b + 0] * np.exp(w) / grid_w # unit: image width
-                    h = anchors[2 * b + 1] * np.exp(h) / grid_h # unit: image height
-                    confidence = netout[row,col,b,4]
-                    
-                    box = BoundBox(x-w/2, y-h/2, x+w/2, y+h/2, confidence, classes)
-                    
-                    boxes.append(box)
-
-    # suppress non-maximal boxes
-    for c in range(nb_class):
-        sorted_indices = list(reversed(np.argsort([box.classes[c] for box in boxes])))
-
-        for i in range(len(sorted_indices)):
-            index_i = sorted_indices[i]
-            
-            if boxes[index_i].classes[c] == 0: 
-                continue
-            else:
-                for j in range(i+1, len(sorted_indices)):
-                    index_j = sorted_indices[j]
-                    
-                    if bbox_iou(boxes[index_i], boxes[index_j]) >= nms_threshold:
-                        boxes[index_j].classes[c] = 0
-                        
-    # remove the boxes which are less likely than a obj_threshold
-    boxes = [box for box in boxes if box.get_score() > obj_threshold]
-    
-    return boxes    
-
-def draw_boxes(image, boxes, labels):
-    image_h, image_w, _ = image.shape
-
-    for box in boxes:
-        xmin = int(box.xmin*image_w)
-        ymin = int(box.ymin*image_h)
-        xmax = int(box.xmax*image_w)
-        ymax = int(box.ymax*image_h)
-
-        cv2.rectangle(image, (xmin,ymin), (xmax,ymax), (0,255,0), 3)
-        cv2.putText(image, 
-                    labels[box.get_label()] + ' ' + str(box.get_score()), 
-                    (xmin, ymin - 13), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 
-                    1e-3 * image_h, 
-                    (0,255,0), 2)    
-    return image       
-
-def bbox_iou(box1, box2):
-    intersect_w = _interval_overlap([box1.xmin, box1.xmax], [box2.xmin, box2.xmax])
-    intersect_h = _interval_overlap([box1.ymin, box1.ymax], [box2.ymin, box2.ymax])  
-    
-    intersect = intersect_w * intersect_h
-
-    w1, h1 = box1.xmax-box1.xmin, box1.ymax-box1.ymin
-    w2, h2 = box2.xmax-box2.xmin, box2.ymax-box2.ymin
-    
-    union = w1*h1 + w2*h2 - intersect
-    return float(intersect) / union
-
-class BoundBox:
-    def __init__(self, xmin, ymin, xmax, ymax, c = None, classes = None):
-        self.xmin = xmin
-        self.ymin = ymin
-        self.xmax = xmax
-        self.ymax = ymax
-        
-        self.c     = c
-        self.classes = classes
-
-        self.label = -1
-        self.score = -1
-
-    def get_label(self):
-        if self.label == -1:
-            self.label = np.argmax(self.classes)
-        
-        return self.label
-    
-    def get_score(self):
-        if self.score == -1:
-            self.score = self.classes[self.get_label()]
-            
-        return self.score
-
-def _sigmoid(x):
-    return 1. / (1. + np.exp(-x))
-  
-
-def _softmax(x, axis=-1, t=-100.):
-    x = x - np.max(x)
-    
-    if np.min(x) < t:
-        x = x/np.min(x)*t
-        
-    e_x = np.exp(x)
-    
-    return e_x / e_x.sum(axis, keepdims=True)
-
-
+#============設定ファイル============
 
 import numpy as np
 LABELS = ['RBC']
@@ -256,11 +126,10 @@ CLASS_SCALE      = 1.0
 #バッチサイズ
 BATCH_SIZE       = 16
 
-WARM_UP_BATCHES  = 100
+WARM_UP_BATCHES  = 3
 TRUE_BOX_BUFFER  = 50
 #学習済み重み
 wt_path = 'yolo.weights'
-
 
 #バッチクラス作成用の設定
 generator_config = {
@@ -276,6 +145,7 @@ generator_config = {
     'TRUE_BOX_BUFFER' : 50,
 }
 
+#============バッチ作成============
 
 from keras.models import Sequential, Model
 from keras.layers import Reshape, Activation, Conv2D, Input, MaxPooling2D, BatchNormalization, Flatten, Dense, Lambda
@@ -284,12 +154,18 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from keras.optimizers import SGD, Adam, RMSprop
 from keras.layers.merge import concatenate
 from keras.utils import Sequence
+import matplotlib.pyplot as plt
 import keras.backend as K
 import tensorflow as tf
 import numpy as np
 import pickle
+# import os
 import copy
 import os, cv2
+# from preprocessing import parse_annotation, BatchGenerator
+# from preprocessing import BatchGenerator
+# from utils import WeightReader, decode_netout, draw_boxes, normalize
+
 
 class BatchGenerator(Sequence):
     def __init__(self, images, 
@@ -458,7 +334,6 @@ class BatchGenerator(Sequence):
                 
         return image, all_objs
 
-
 train_valid_split = int(0.8*len(all_imgs))
 
 train_batch = BatchGenerator(all_imgs[:train_valid_split], generator_config)
@@ -469,11 +344,14 @@ for X_train, Y_train in train_batch:
   print(np.array(Y_train)[0].shape)
   break
   
-
 print(len(train_batch))
 print(len(valid_batch))
 
+image = train_batch[0][0][0][0]
+print(image.shape)
+# plt.imshow(image.astype('uint8'))
 
+#============モデル構築============
 def space_to_depth_x2(x):
     return tf.space_to_depth(x, block_size=2)
 
@@ -602,6 +480,8 @@ x = BatchNormalization(name='norm_22')(x)
 x = LeakyReLU(alpha=0.1)(x)
 
 # Layer 23
+#S*S*(B*5+C) tensor
+#BOX:5個、CLASS：len(labels)
 x = Conv2D(BOX * (4 + 1 + CLASS), (1,1), strides=(1,1), padding='same', name='conv_23')(x)
 output = Reshape((GRID_H, GRID_W, BOX, 4 + 1 + CLASS))(x)
 
@@ -610,39 +490,277 @@ output = Reshape((GRID_H, GRID_W, BOX, 4 + 1 + CLASS))(x)
 output = Lambda(lambda args: args[0])([output, true_boxes])
 
 model = Model([input_image, true_boxes], output)
-model.load_weights('yolo_weights.200.adam.hdf5')
+
+class WeightReader:
+    def __init__(self, weight_file):
+        self.offset = 4
+        self.all_weights = np.fromfile(weight_file, dtype='float32')
+        
+    def read_bytes(self, size):
+        self.offset = self.offset + size
+        return self.all_weights[self.offset-size:self.offset]
+    
+    def reset(self):
+        self.offset = 4
+
+weight_reader = WeightReader(wt_path)
+
+nb_conv = 23
+weight_reader.reset()
+for i in range(1, nb_conv+1):
+    conv_layer = model.get_layer('conv_' + str(i))
+    
+    if i < nb_conv:
+        norm_layer = model.get_layer('norm_' + str(i))
+        
+        size = np.prod(norm_layer.get_weights()[0].shape)
+
+        beta  = weight_reader.read_bytes(size)
+        gamma = weight_reader.read_bytes(size)
+        mean  = weight_reader.read_bytes(size)
+        var   = weight_reader.read_bytes(size)
+
+        weights = norm_layer.set_weights([gamma, beta, mean, var])       
+        
+    if len(conv_layer.get_weights()) > 1:
+        bias   = weight_reader.read_bytes(np.prod(conv_layer.get_weights()[1].shape))
+        kernel = weight_reader.read_bytes(np.prod(conv_layer.get_weights()[0].shape))
+        kernel = kernel.reshape(list(reversed(conv_layer.get_weights()[0].shape)))
+        kernel = kernel.transpose([2,3,1,0])
+        conv_layer.set_weights([kernel, bias])
+    else:
+        kernel = weight_reader.read_bytes(np.prod(conv_layer.get_weights()[0].shape))
+        kernel = kernel.reshape(list(reversed(conv_layer.get_weights()[0].shape)))
+        kernel = kernel.transpose([2,3,1,0])
+        conv_layer.set_weights([kernel])
+
+layer   = model.layers[-4] # the last convolutional layer
+weights = layer.get_weights()
+
+new_kernel = np.random.normal(size=weights[0].shape)/(GRID_H*GRID_W)
+new_bias   = np.random.normal(size=weights[1].shape)/(GRID_H*GRID_W)
+
+layer.set_weights([new_kernel, new_bias])
 
 
 
-print(os.path.join(os.path.dirname(os.path.abspath("__file__")), "VOCdevkit", "VOC2012", "JPEGImages", "2007_000027.jpg"))
-filepath = os.path.join(os.path.dirname(os.path.abspath("__file__")), "VOCdevkit", "VOC2012", "JPEGImages", "2007_000027.jpg")
-dummy_array = np.zeros((1,1,1,1,TRUE_BOX_BUFFER,4))
-image = cv2.imread(filepath)
+
+#============loss定義============
+def custom_loss(y_true, y_pred):
+    #mask作成
+    mask_shape = tf.shape(y_true)[:4]
+    #tile：ある次元方向へ繰り返す
+    cell_x = tf.to_float(tf.reshape(tf.tile(tf.range(GRID_W), [GRID_H]), (1, GRID_H, GRID_W, 1, 1)))
+    cell_y = tf.transpose(cell_x, (0,2,1,3,4))
+
+    #グリッドセルを作成。
+    cell_grid = tf.tile(tf.concat([cell_x,cell_y], -1), [BATCH_SIZE, 1, 1, 5, 1])
+    
+    coord_mask = tf.zeros(mask_shape)
+    conf_mask  = tf.zeros(mask_shape)
+    class_mask = tf.zeros(mask_shape)
+    
+    seen = tf.Variable(0.)
+    total_recall = tf.Variable(0.)
+    
+    """
+    Adjust prediction
+    """
+    ### adjust x and y      
+    pred_box_xy = tf.sigmoid(y_pred[..., :2]) + cell_grid
+    
+    ### adjust w and h
+    pred_box_wh = tf.exp(y_pred[..., 2:4]) * np.reshape(ANCHORS, [1,1,1,BOX,2])
+    
+    ### adjust confidence
+    pred_box_conf = tf.sigmoid(y_pred[..., 4])
+    
+    ### adjust class probabilities
+    pred_box_class = y_pred[..., 5:]
+    
+    """
+    Adjust ground truth
+    """
+    ### adjust x and y
+    true_box_xy = y_true[..., 0:2] # relative position to the containing cell
+    
+    ### adjust w and h
+    true_box_wh = y_true[..., 2:4] # number of cells accross, horizontally and vertically
+    
+    ### adjust confidence
+    true_wh_half = true_box_wh / 2.
+    true_mins    = true_box_xy - true_wh_half
+    true_maxes   = true_box_xy + true_wh_half
+    
+    pred_wh_half = pred_box_wh / 2.
+    pred_mins    = pred_box_xy - pred_wh_half
+    pred_maxes   = pred_box_xy + pred_wh_half       
+    
+    intersect_mins  = tf.maximum(pred_mins,  true_mins)
+    intersect_maxes = tf.minimum(pred_maxes, true_maxes)
+    intersect_wh    = tf.maximum(intersect_maxes - intersect_mins, 0.)
+    intersect_areas = intersect_wh[..., 0] * intersect_wh[..., 1]
+    
+    true_areas = true_box_wh[..., 0] * true_box_wh[..., 1]
+    pred_areas = pred_box_wh[..., 0] * pred_box_wh[..., 1]
+
+    union_areas = pred_areas + true_areas - intersect_areas
+    iou_scores  = tf.truediv(intersect_areas, union_areas)
+    
+    true_box_conf = iou_scores * y_true[..., 4]
+    
+    ### adjust class probabilities
+    true_box_class = tf.argmax(y_true[..., 5:], -1)
+    
+    """
+    Determine the masks
+    """
+    ### coordinate mask: simply the position of the ground truth boxes (the predictors)
+    coord_mask = tf.expand_dims(y_true[..., 4], axis=-1) * COORD_SCALE
+    
+    ### confidence mask: penelize predictors + penalize boxes with low IOU
+    # penalize the confidence of the boxes, which have IOU with some ground truth box < 0.6
+    true_xy = true_boxes[..., 0:2]
+    true_wh = true_boxes[..., 2:4]
+    
+    true_wh_half = true_wh / 2.
+    true_mins    = true_xy - true_wh_half
+    true_maxes   = true_xy + true_wh_half
+    
+    pred_xy = tf.expand_dims(pred_box_xy, 4)
+    pred_wh = tf.expand_dims(pred_box_wh, 4)
+    
+    pred_wh_half = pred_wh / 2.
+    pred_mins    = pred_xy - pred_wh_half
+    pred_maxes   = pred_xy + pred_wh_half    
+    
+    intersect_mins  = tf.maximum(pred_mins,  true_mins)
+    intersect_maxes = tf.minimum(pred_maxes, true_maxes)
+    intersect_wh    = tf.maximum(intersect_maxes - intersect_mins, 0.)
+    intersect_areas = intersect_wh[..., 0] * intersect_wh[..., 1]
+    
+    true_areas = true_wh[..., 0] * true_wh[..., 1]
+    pred_areas = pred_wh[..., 0] * pred_wh[..., 1]
+
+    union_areas = pred_areas + true_areas - intersect_areas
+    iou_scores  = tf.truediv(intersect_areas, union_areas)
+
+    best_ious = tf.reduce_max(iou_scores, axis=4)
+    conf_mask = conf_mask + tf.to_float(best_ious < 0.6) * (1 - y_true[..., 4]) * NO_OBJECT_SCALE
+    
+    # penalize the confidence of the boxes, which are reponsible for corresponding ground truth box
+    conf_mask = conf_mask + y_true[..., 4] * OBJECT_SCALE
+    
+    ### class mask: simply the position of the ground truth boxes (the predictors)
+    class_mask = y_true[..., 4] * tf.gather(CLASS_WEIGHTS, true_box_class) * CLASS_SCALE       
+    
+    """
+    Warm-up training
+    """
+    no_boxes_mask = tf.to_float(coord_mask < COORD_SCALE/2.)
+    seen = tf.assign_add(seen, 1.)
+    
+    true_box_xy, true_box_wh, coord_mask = tf.cond(tf.less(seen, WARM_UP_BATCHES), 
+                          lambda: [true_box_xy + (0.5 + cell_grid) * no_boxes_mask, 
+                                   true_box_wh + tf.ones_like(true_box_wh) * np.reshape(ANCHORS, [1,1,1,BOX,2]) * no_boxes_mask, 
+                                   tf.ones_like(coord_mask)],
+                          lambda: [true_box_xy, 
+                                   true_box_wh,
+                                   coord_mask])
+    
+    """
+    Finalize the loss
+    """
+    nb_coord_box = tf.reduce_sum(tf.to_float(coord_mask > 0.0))
+    nb_conf_box  = tf.reduce_sum(tf.to_float(conf_mask  > 0.0))
+    nb_class_box = tf.reduce_sum(tf.to_float(class_mask > 0.0))
+    
+    loss_xy    = tf.reduce_sum(tf.square(true_box_xy-pred_box_xy)     * coord_mask) / (nb_coord_box + 1e-6) / 2.
+    loss_wh    = tf.reduce_sum(tf.square(true_box_wh-pred_box_wh)     * coord_mask) / (nb_coord_box + 1e-6) / 2.
+    loss_conf  = tf.reduce_sum(tf.square(true_box_conf-pred_box_conf) * conf_mask)  / (nb_conf_box  + 1e-6) / 2.
+    loss_class = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_box_class, logits=pred_box_class)
+    loss_class = tf.reduce_sum(loss_class * class_mask) / (nb_class_box + 1e-6)
+    
+    loss = loss_xy + loss_wh + loss_conf + loss_class
+    
+    nb_true_box = tf.reduce_sum(y_true[..., 4])
+    nb_pred_box = tf.reduce_sum(tf.to_float(true_box_conf > 0.5) * tf.to_float(pred_box_conf > 0.3))
+
+    """
+    Debugging code
+    """    
+    current_recall = nb_pred_box/(nb_true_box + 1e-6)
+    total_recall = tf.assign_add(total_recall, current_recall) 
+
+    loss = tf.Print(loss, [tf.zeros((1))], message='Dummy Line \t', summarize=1000)
+    loss = tf.Print(loss, [loss_xy], message='Loss XY \t', summarize=1000)
+    loss = tf.Print(loss, [loss_wh], message='Loss WH \t', summarize=1000)
+    loss = tf.Print(loss, [loss_conf], message='Loss Conf \t', summarize=1000)
+    loss = tf.Print(loss, [loss_class], message='Loss Class \t', summarize=1000)
+    loss = tf.Print(loss, [loss], message='Total Loss \t', summarize=1000)
+    loss = tf.Print(loss, [current_recall], message='Current Recall \t', summarize=1000)
+    loss = tf.Print(loss, [total_recall/seen], message='Average Recall \t', summarize=1000)
+    
+    return loss
 
 
-# plt.figure(figsize=(10,10))
-# plt.imshow(image); plt.show()
 
+#============学習============
+early_stop = EarlyStopping(monitor='val_loss', 
+                           min_delta=0.00001, 
+                           patience=3, 
+                           mode='min', 
+                           verbose=1)
 
+filepath="weights_voc.adam.ep{epoch:02d}.h5"
+checkpoint = ModelCheckpoint(filepath, 
+                             monitor='val_loss', 
+                             verbose=1, 
+                             save_best_only=True, 
+                             mode='min', 
+                             period=1)
 
-input_image = cv2.resize(image, (416, 416))
-input_image = input_image / 255.
-input_image = input_image[:,:,::-1]#::で最後まで,をつけるの省略形
-print(input_image.shape)
-input_image = np.expand_dims(input_image, 0)#expand_dims次元を増やす
-print(input_image.shape)
+from keras.callbacks import Callback
+class WeightsSaver(Callback):
+    def __init__(self, model, N):
+        self.model = model
+        self.N = N
+        self.batch = 0
+        
+    def on_batch_end(self, batch, logs={}):
+        if self.batch % self.N == 0:
+            name = 'yolo_weights.%08d.hdf5' % self.batch
+            self.model.save_weights(name)
+        self.batch += 1
 
+tb_counter  = len([log for log in os.listdir(os.path.expanduser('~/')) if 'log_voc' in log]) + 1
+tensorboard = TensorBoard(log_dir=os.path.expanduser('~/') + 'log_voc' + '_' + str(tb_counter), 
+                          histogram_freq=0, 
+                          write_graph=True, 
+                          write_images=False)
 
+optimizer = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+#optimizer = SGD(lr=1e-4, decay=0.0005, momentum=0.9)
+#optimizer = RMSprop(lr=1e-5, rho=0.9, epsilon=1e-08, decay=0.0)
 
-netout = model.predict([input_image, dummy_array])
+model.compile(loss=custom_loss, optimizer=optimizer)
 
-boxes = decode_netout(netout[0], 
-                      obj_threshold=0.04,
-                      nms_threshold=0.3,
-                      anchors=ANCHORS, 
-                      nb_class=CLASS)
-image = draw_boxes(image, boxes, labels=LABELS)
-print(image.shape)
-# plt.imshow(image[:,:,::-1]); plt.show()
-cv2.imwrite('darknet_voc_test_adam_001.jpg', image)
+#model.load_weights('./yolo_weights.200.hdf5')
+
+model.fit_generator(generator        = train_batch, 
+                    steps_per_epoch  = len(train_batch), 
+                    epochs           = 100, 
+                    verbose          = 1,
+                    validation_data  = valid_batch,
+                    validation_steps = len(valid_batch),
+#                     callbacks        = [early_stop, checkpoint, tensorboard], 
+                    callbacks        = [tensorboard, WeightsSaver(model, 1000)], 
+                    max_queue_size   = 3)
+
+model.save_weights('./yolo_weights.200.adam.hdf5')
+
+#============テスト============
+# print(os.path.join(os.path.dirname(os.path.abspath("__file__")), "RedBlodCellDetection", "JPEGImages", "BloodImage_00327.jpg"))
+# image_path = os.path.join(os.path.dirname(os.path.abspath("__file__")), "VOCdevkit", "VOC2012", "JPEGImages")
+# print(os.path.join(os.path.dirname(os.path.abspath("__file__")), "VOCdevkit", "VOC2012", "JPEGImages"))
 

@@ -126,7 +126,7 @@ CLASS_SCALE      = 1.0
 #バッチサイズ
 BATCH_SIZE       = 16
 
-WARM_UP_BATCHES  = 100
+WARM_UP_BATCHES  = 3
 TRUE_BOX_BUFFER  = 50
 #学習済み重み
 wt_path = 'yolo.weights'
@@ -712,23 +712,35 @@ early_stop = EarlyStopping(monitor='val_loss',
                            mode='min', 
                            verbose=1)
 
-# 'weights_blood.h5'
 filepath="weights_voc.ep{epoch:02d}.h5"
-checkpoint = ModelCheckpoint(filepath, 
-                             monitor='val_loss', 
-                             verbose=1, 
-                             save_best_only=True, 
-                             mode='min', 
-                             period=1)
+#checkpoint = CustomModelCheckpoint(
+#        filepath=filepath,
+#        thresholds={
+#                    'acc': 0.8,
+#                    'val_acc': 0.75,
+#                    'val_custom_metrics': 0.5
+#                })
 
-
+from keras.callbacks import Callback
+class WeightsSaver(Callback):
+    def __init__(self, model, N):
+        self.model = model
+        self.N = N
+        self.batch = 0
+        
+    def on_batch_end(self, batch, logs={}):
+        if self.batch % self.N == 0:
+            name = 'yolo_weights.%08d.hdf5' % self.batch
+            self.model.save_weights(name)
+        self.batch += 1
+                                                                                        
 tb_counter  = len([log for log in os.listdir(os.path.expanduser('~/')) if 'log_voc' in log]) + 1
 tensorboard = TensorBoard(log_dir=os.path.expanduser('~/') + 'log_voc' + '_' + str(tb_counter), 
                           histogram_freq=0, 
                           write_graph=True, 
                           write_images=False)
 
-# optimizer = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+#optimizer = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 optimizer = SGD(lr=1e-4, decay=0.0005, momentum=0.9)
 #optimizer = RMSprop(lr=1e-5, rho=0.9, epsilon=1e-08, decay=0.0)
 
@@ -741,10 +753,10 @@ model.fit_generator(generator        = train_batch,
                     validation_data  = valid_batch,
                     validation_steps = len(valid_batch),
 #                     callbacks        = [early_stop, checkpoint, tensorboard], 
-                    callbacks        = [checkpoint, tensorboard], 
+                    callbacks        = [tensorboard, WeightsSaver(model, 1000)], 
                     max_queue_size   = 3)
 
-model.save_weights('./yolo_weights.100.hdf5')
+model.save_weights('./yolo_weights.300.hdf5')
 
 #============テスト============
 # print(os.path.join(os.path.dirname(os.path.abspath("__file__")), "RedBlodCellDetection", "JPEGImages", "BloodImage_00327.jpg"))
