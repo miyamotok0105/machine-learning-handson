@@ -68,27 +68,24 @@ print(img.shape)
 #============バウンディングボックス============
 
 class BoundBox:
-    def __init__(self, x, y, w, h, c = None, classes = None):
-        self.x     = x
-        self.y     = y
-        self.w     = w
-        self.h     = h
-        
+    def __init__(self, xmin, ymin, xmax, ymax, c = None, classes = None):
+        self.xmin = xmin
+        self.ymin = ymin
+        self.xmax = xmax
+        self.ymax = ymax
         self.c     = c
-        self.classes = classes #クラス
-        self.label = -1 #ラベル
-        self.score = -1 #スコア
-
+        self.classes = classes
+        self.label = -1
+        self.score = -1
+        
     def get_label(self):
         if self.label == -1:
             self.label = np.argmax(self.classes)
-        
         return self.label
-    
+            
     def get_score(self):
         if self.score == -1:
             self.score = self.classes[self.get_label()]
-            
         return self.score
 
 #============正規化============
@@ -101,7 +98,8 @@ def normalize(image):
 #============設定ファイル============
 
 import numpy as np
-LABELS = ['RBC']
+#LABELS = ['RBC']
+LABELS = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
 #画像サイズ
 IMAGE_H, IMAGE_W = 416, 416
 #縦横のグリッド数
@@ -165,6 +163,30 @@ import os, cv2
 # from preprocessing import parse_annotation, BatchGenerator
 # from preprocessing import BatchGenerator
 # from utils import WeightReader, decode_netout, draw_boxes, normalize
+
+
+def _interval_overlap(interval_a, interval_b):
+    x1, x2 = interval_a
+    x3, x4 = interval_b
+    if x3 < x1:
+        if x4 < x1:
+            return 0
+        else:
+            return min(x2,x4) - x1
+    else:
+        if x2 < x3:
+            return 0
+        else:
+            return min(x2,x4) - x3
+                                        
+def bbox_iou(box1, box2):
+    intersect_w = _interval_overlap([box1.xmin, box1.xmax], [box2.xmin, box2.xmax])
+    intersect_h = _interval_overlap([box1.ymin, box1.ymax], [box2.ymin, box2.ymax])
+    intersect = intersect_w * intersect_h
+    w1, h1 = box1.xmax-box1.xmin, box1.ymax-box1.ymin
+    w2, h2 = box2.xmax-box2.xmin, box2.ymax-box2.ymin
+    union = w1*h1 + w2*h2 - intersect
+    return float(intersect) / union
 
 
 class BatchGenerator(Sequence):
@@ -748,15 +770,15 @@ model.compile(loss=custom_loss, optimizer=optimizer)
 
 model.fit_generator(generator        = train_batch, 
                     steps_per_epoch  = len(train_batch), 
-                    epochs           = 100, 
+                    epochs           = 1000, 
                     verbose          = 1,
                     validation_data  = valid_batch,
                     validation_steps = len(valid_batch),
 #                     callbacks        = [early_stop, checkpoint, tensorboard], 
-                    callbacks        = [tensorboard, WeightsSaver(model, 1000)], 
+                    callbacks        = [tensorboard, WeightsSaver(model, 100000)], 
                     max_queue_size   = 3)
 
-model.save_weights('./yolo_weights.300.hdf5')
+model.save_weights('./yolo_weights.1000.hdf5')
 
 #============テスト============
 # print(os.path.join(os.path.dirname(os.path.abspath("__file__")), "RedBlodCellDetection", "JPEGImages", "BloodImage_00327.jpg"))
