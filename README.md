@@ -1,84 +1,96 @@
 # machine-learning-handson
 
+ちょこっと整理した。
+I organized a little more than before.
+
+## Deep Learning form scratch.
+
+「ゼロから作る深層学習」
+
+https://github.com/miyamotok0105/machine-learning-handson/tree/master/scratch_py
+
+## Chainer
+
+Compare cifar10 dataset from Keras and Chainer.
+
+https://github.com/miyamotok0105/machine-learning-handson/blob/master/chainer4.0.0b3/cifar10%E6%AF%94%E8%BC%83.ipynb
 
 
+Apply hyperopt to Chaier.
 
-# tensorflow sample
+https://github.com/miyamotok0105/machine-learning-handson/blob/master/chainer4.0.0b3/hypteropt.ipynb
 
-- pycadl
+## Font Image Classifer
 
-https://github.com/pkmital/pycadl
+https://github.com/miyamotok0105/machine-learning-handson/tree/master/fontname
 
+## Keras
 
+vgg16
 
-# keras sample
+https://github.com/miyamotok0105/machine-learning-handson/blob/master/keras2.0.8/vgg16%E7%94%BB%E5%83%8F%E5%88%86%E9%A1%9E%E3%81%AE%E5%AD%A6%E7%BF%92%E5%87%A6%E7%90%86.ipynb
 
-- deep-learning-with-python-notebooks
+resnet50
 
-https://github.com/fchollet/deep-learning-with-python-notebooks
+https://github.com/miyamotok0105/machine-learning-handson/blob/master/keras2.0.8/resnet50%E7%94%BB%E5%83%8F%E5%88%86%E9%A1%9E%E3%81%AE%E5%AD%A6%E7%BF%92%E5%87%A6%E7%90%86.ipynb
 
-- game ai    
+## ML
 
-http://gameaibook.org/book.pdf
+Linear regression
+Logistic Regression
+Naive Bayes
+math
+nueral network
+svm
 
-- graph    
-
-Python networkx でマルコフ確率場 / 確率伝搬法を実装する    
-http://sinhrks.hatenablog.com/entry/2014/12/27/232506    
-確率伝播アルゴリズムとは    
-https://staff.aist.go.jp/y-ichisugi/besom/20100226what-is-bp.pdf    
-
-
-
-# paper
-
-
-- nips
-
-https://papers.nips.cc/
+https://github.com/miyamotok0105/machine-learning-handson/tree/master/ml_sample
 
 
-# git
+## Keras Flask
 
-- awesome-self-driving-cars
+Simple API Server.
 
-https://github.com/philbort/awesome-self-driving-cars
+https://github.com/miyamotok0105/machine-learning-handson/tree/master/server/keras_flask1
 
-- ml    
-
-https://github.com/sravya8/ML/blob/master    
+https://github.com/miyamotok0105/machine-learning-handson/tree/master/server/keras_flask2
 
 
-- nlp    
+## GRPC
 
-nltk    
-https://github.com/nltk/nltk_book/tree/master/book    
-https://github.com/RDFLib/PyRDFa    
-https://github.com/PacktPublishing/Mastering-Natural-Language-Processing-with-Python    
-https://github.com/dipanjanS/text-analytics-with-python    
-https://github.com/PacktPublishing/Natural-Language-Processing-with-Python-Cookbook    
+Simple grpc sample.
 
+https://github.com/miyamotok0105/machine-learning-handson/tree/master/server/grpc_example1
+https://github.com/miyamotok0105/machine-learning-handson/tree/master/server/grpc_example2
 
-# math
+## Tensorflow Serving
 
-- 最適化,線形計画法,内点法,数理計画法
+This is Sample TF Serving which Client Side is golang, Server Side is Python.
 
-http://www.me.titech.ac.jp/~mizu_lab/text.html
-
-# good page
-
-- scipy numpy    
-
-https://scipython.com/book/
-http://scipy-cookbook.readthedocs.io/index.html
-https://www.gitbook.com/book/wizardforcel/scipy-cookbook-en
-http://www.scipy-lectures.org/intro/index.html
+https://github.com/miyamotok0105/TensorFlowDL-samples/tree/master/serving
 
 
+If you use TF Serving, First to make tf saved model.
 
-- tex
+https://github.com/miyamotok0105/TensorFlowDL-samples/tree/master/save_model
 
-https://www.codecogs.com/latex/eqneditor.php    
+## TensorFlow XLA
+
+Information.
+
+https://github.com/miyamotok0105/TensorFlowDL-samples/tree/master/tensorflow_xla
+
+## Tensorflow js
+
+You can use Tensorflow in browser.
+
+https://github.com/miyamotok0105/TensorFlow.js_sample
+
+
+## Yolo
+
+Detection Model.
+
+https://github.com/miyamotok0105/machine-learning-handson/tree/master/yolo
 
 
 
