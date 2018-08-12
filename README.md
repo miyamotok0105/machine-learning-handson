@@ -92,5 +92,31 @@ Detection Model.
 
 https://github.com/miyamotok0105/machine-learning-handson/tree/master/yolo
 
+## Hive, SparkSQL
+
+TODO:
+
+https://qiita.com/zaburo/items/6086ded8cbb43e2ddd39
+
+https://qiita.com/yamatoshi27/items/f57d75d33f6b6e46ffd6
+
+
+## BigQuery ML
+
+https://www.wantedly.com/companies/wantedly/post_articles/129482
+
+## Firebase ML Kit
+
+
+https://techlife.cookpad.com/entry/2018/07/05/090000
+
+
+
+
+
+
+
+
+
 
 
